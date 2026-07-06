@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PixVault Photos</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="PixVault 首页">
+        <span class="brand-mark"></span>
+        <span>PixVault</span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <button class="nav-link active" data-view="all">照片</button>
+        <button class="nav-link" data-view="favorites">收藏</button>
+        <button class="nav-link" data-view="recent">最近上传</button>
+      </nav>
+      <div class="top-actions">
+        <button class="ghost-button" id="themeToggle" type="button" aria-label="切换主题">◐</button>
+        <button class="upload-button" id="openUpload" type="button">上传</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <h1>免费管理你的高清照片</h1>
+          <p>搜索、分类、收藏、预览和下载，像素材站一样整理个人图片。</p>
+          <form class="search-panel" id="searchForm">
+            <label class="search-box">
+              <span class="search-icon">⌕</span>
+              <input id="searchInput" type="search" placeholder="搜索照片、标签、作者" autocomplete="off">
+            </label>
+            <select id="typeFilter" aria-label="照片类型">
+              <option value="all">全部图片</option>
+              <option value="nature">自然</option>
+              <option value="city">城市</option>
+              <option value="people">人物</option>
+              <option value="science">科研</option>
+              <option value="other">其他</option>
+            </select>
+            <button type="submit">搜索</button>
+          </form>
+        </div>
+      </section>
+
+      <section class="category-strip" aria-label="分类">
+        <button class="chip selected" data-category="all">全部</button>
+        <button class="chip" data-category="nature">自然</button>
+        <button class="chip" data-category="city">城市</button>
+        <button class="chip" data-category="people">人物</button>
+        <button class="chip" data-category="science">科研</button>
+        <button class="chip" data-category="other">其他</button>
+      </section>
+
+      <section class="content-bar">
+        <div>
+          <h2 id="galleryTitle">精选照片</h2>
+          <p id="galleryMeta">本地照片库，数据只保存在这台电脑的浏览器里。</p>
+        </div>
+        <div class="sort-group">
+          <label for="sortSelect">排序</label>
+          <select id="sortSelect">
+            <option value="newest">最新</option>
+            <option value="liked">收藏优先</option>
+            <option value="title">标题</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="gallery" id="gallery" aria-live="polite"></section>
+
+      <section class="empty-state hidden" id="emptyState">
+        <h2>还没有匹配的照片</h2>
+        <p>换个关键词，或者上传几张你自己的图片。</p>
+        <button class="upload-button" type="button" data-upload-shortcut>上传照片</button>
+      </section>
+    </main>
+
+    <dialog class="modal" id="uploadDialog">
+      <form method="dialog" class="modal-card" id="uploadForm">
+        <div class="modal-header">
+          <h2>上传照片</h2>
+          <button class="icon-button" value="cancel" aria-label="关闭">×</button>
+        </div>
+        <label class="drop-zone" id="dropZone">
+          <input id="fileInput" type="file" accept="image/*" multiple>
+          <span>选择图片或拖放到这里</span>
+          <small>支持 JPG、PNG、WebP、GIF；会保存到浏览器本地。</small>
+        </label>
+        <div class="field-grid">
+          <label>
+            标题
+            <input id="photoTitle" type="text" placeholder="例如：实验室窗口">
+          </label>
+          <label>
+            分类
+            <select id="photoCategory">
+              <option value="nature">自然</option>
+              <option value="city">城市</option>
+              <option value="people">人物</option>
+              <option value="science">科研</option>
+              <option value="other">其他</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          标签
+          <input id="photoTags" type="text" placeholder="用逗号分隔，例如：蓝色, 光学, 旅行">
+        </label>
+        <menu class="modal-actions">
+          <button type="button" class="ghost-button" id="clearForm">清空</button>
+          <button type="submit" class="upload-button">保存到图库</button>
+        </menu>
+      </form>
+    </dialog>
+
+    <dialog class="lightbox" id="lightbox">
+      <article class="lightbox-card">
+        <button class="icon-button close-lightbox" id="closeLightbox" type="button" aria-label="关闭">×</button>
+        <img id="lightboxImage" alt="">
+        <aside class="lightbox-info">
+          <h2 id="lightboxTitle"></h2>
+          <p id="lightboxTags"></p>
+          <div class="detail-grid">
+            <span>分类</span><strong id="lightboxCategory"></strong>
+            <span>上传时间</span><strong id="lightboxDate"></strong>
+            <span>尺寸</span><strong id="lightboxSize"></strong>
+          </div>
+          <div class="detail-actions">
+            <button class="ghost-button" id="toggleFavorite" type="button">收藏</button>
+            <a class="upload-button" id="downloadPhoto" download>下载</a>
+          </div>
+        </aside>
+      </article>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>
