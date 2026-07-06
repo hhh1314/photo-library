@@ -108,10 +108,17 @@ const state = {
   search: "",
   type: "all",
   sort: "newest",
-  selectedPhotoId: null
+  selectedPhotoId: null,
+  weatherCoords: null
 };
 
 const elements = {
+  loginScreen: document.querySelector("#loginScreen"),
+  appShell: document.querySelector("#appShell"),
+  loginForm: document.querySelector("#loginForm"),
+  loginName: document.querySelector("#loginName"),
+  loginCode: document.querySelector("#loginCode"),
+  loginMessage: document.querySelector("#loginMessage"),
   gallery: document.querySelector("#gallery"),
   emptyState: document.querySelector("#emptyState"),
   galleryTitle: document.querySelector("#galleryTitle"),
@@ -139,7 +146,38 @@ const elements = {
   toggleFavorite: document.querySelector("#toggleFavorite"),
   downloadPhoto: document.querySelector("#downloadPhoto"),
   closeLightbox: document.querySelector("#closeLightbox"),
-  themeToggle: document.querySelector("#themeToggle")
+  themeToggle: document.querySelector("#themeToggle"),
+  logoutButton: document.querySelector("#logoutButton"),
+  weatherOrb: document.querySelector("#weatherOrb"),
+  weatherTemp: document.querySelector("#weatherTemp"),
+  weatherSummary: document.querySelector("#weatherSummary"),
+  weatherPlace: document.querySelector("#weatherPlace"),
+  weatherFeels: document.querySelector("#weatherFeels"),
+  weatherHumidity: document.querySelector("#weatherHumidity"),
+  weatherWind: document.querySelector("#weatherWind"),
+  refreshWeather: document.querySelector("#refreshWeather")
+};
+
+const weatherDescriptions = {
+  0: ["晴朗", "sun"],
+  1: ["大部晴朗", "sun"],
+  2: ["局部多云", "cloud"],
+  3: ["阴天", "cloud"],
+  45: ["有雾", "cloud"],
+  48: ["雾凇", "cloud"],
+  51: ["小毛毛雨", "rain"],
+  53: ["毛毛雨", "rain"],
+  55: ["较强毛毛雨", "rain"],
+  61: ["小雨", "rain"],
+  63: ["中雨", "rain"],
+  65: ["大雨", "rain"],
+  71: ["小雪", "cloud"],
+  73: ["中雪", "cloud"],
+  75: ["大雪", "cloud"],
+  80: ["阵雨", "rain"],
+  81: ["较强阵雨", "rain"],
+  82: ["强阵雨", "rain"],
+  95: ["雷雨", "rain"]
 };
 
 function openDb() {
@@ -364,6 +402,101 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function getBrowserPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("浏览器不支持定位"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position => resolve({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        label: "当前位置"
+      }),
+      reject,
+      {
+        enableHighAccuracy: false,
+        timeout: 7000,
+        maximumAge: 15 * 60 * 1000
+      }
+    );
+  });
+}
+
+async function loadWeather(force = false) {
+  if (!elements.weatherTemp) return;
+  elements.weatherTemp.textContent = "读取中";
+  elements.weatherSummary.textContent = "正在获取当地天气。";
+
+  let coords = state.weatherCoords;
+  let usedFallback = false;
+  if (!coords || force) {
+    try {
+      coords = await getBrowserPosition();
+    } catch {
+      usedFallback = true;
+      coords = {
+        latitude: 31.2304,
+        longitude: 121.4737,
+        label: "上海"
+      };
+    }
+    state.weatherCoords = coords;
+  }
+
+  try {
+    const params = new URLSearchParams({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      current: "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m",
+      timezone: "auto"
+    });
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+    if (!response.ok) throw new Error("天气接口不可用");
+    const data = await response.json();
+    renderWeather(data.current, coords.label, usedFallback);
+  } catch {
+    elements.weatherTemp.textContent = "--";
+    elements.weatherSummary.textContent = "天气暂时读取失败，稍后再刷新。";
+    elements.weatherPlace.textContent = coords.label;
+  }
+}
+
+function renderWeather(current, place, usedFallback) {
+  const code = Number(current.weather_code);
+  const [description, mood] = weatherDescriptions[code] || ["天气变化中", "cloud"];
+  const temp = Math.round(current.temperature_2m);
+  const feels = Math.round(current.apparent_temperature);
+
+  elements.weatherOrb.classList.remove("rain", "cloud");
+  if (mood !== "sun") elements.weatherOrb.classList.add(mood);
+  elements.weatherTemp.textContent = `${temp}°C`;
+  elements.weatherSummary.textContent = usedFallback
+    ? `${description}。未获得定位权限，当前显示上海天气。`
+    : `${description}。天气数据来自 Open-Meteo。`;
+  elements.weatherPlace.textContent = place;
+  elements.weatherFeels.textContent = `${feels}°C`;
+  elements.weatherHumidity.textContent = `${current.relative_humidity_2m}%`;
+  elements.weatherWind.textContent = `${Math.round(current.wind_speed_10m)} km/h`;
+}
+
+async function enterApp() {
+  elements.loginScreen.classList.add("hidden");
+  elements.appShell.classList.remove("hidden");
+  state.photos = await getSavedPhotos();
+  renderGallery();
+  loadWeather();
+}
+
+function logout() {
+  sessionStorage.removeItem("pixvault-authenticated");
+  elements.appShell.classList.add("hidden");
+  elements.loginScreen.classList.remove("hidden");
+  elements.loginCode.value = "";
+}
+
 function escapeHtml(value) {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -429,6 +562,18 @@ function resetUploadForm() {
 }
 
 function bindEvents() {
+  elements.loginForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    elements.loginMessage.textContent = "";
+    if (elements.loginCode.value.trim() !== "1234") {
+      elements.loginMessage.textContent = "访问码不正确，请输入 1234。";
+      elements.loginCode.focus();
+      return;
+    }
+    sessionStorage.setItem("pixvault-authenticated", "true");
+    await enterApp();
+  });
+
   elements.searchForm.addEventListener("submit", event => {
     event.preventDefault();
     state.search = elements.searchInput.value;
@@ -504,6 +649,9 @@ function bindEvents() {
     localStorage.setItem("pixvault-theme", document.body.classList.contains("dark") ? "dark" : "light");
   });
 
+  elements.logoutButton.addEventListener("click", logout);
+  elements.refreshWeather.addEventListener("click", () => loadWeather(true));
+
   document.addEventListener("keydown", event => {
     if (event.key === "Delete" && state.selectedPhotoId) {
       removePhoto(state.selectedPhotoId);
@@ -519,8 +667,9 @@ async function init() {
   }
 
   bindEvents();
-  state.photos = await getSavedPhotos();
-  renderGallery();
+  if (sessionStorage.getItem("pixvault-authenticated") === "true") {
+    await enterApp();
+  }
 }
 
 init().catch(error => {

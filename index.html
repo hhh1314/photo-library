@@ -7,6 +7,34 @@
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
+    <section class="login-screen" id="loginScreen">
+      <div class="liquid-field" aria-hidden="true">
+        <span class="liquid-blob blob-a"></span>
+        <span class="liquid-blob blob-b"></span>
+        <span class="liquid-blob blob-c"></span>
+      </div>
+      <form class="login-card" id="loginForm">
+        <span class="glass-shine" aria-hidden="true"></span>
+        <div class="brand login-brand">
+          <span class="brand-mark"></span>
+          <span>PixVault</span>
+        </div>
+        <h1>登录照片库</h1>
+        <p>输入访问码后进入图库。演示访问码：<strong>1234</strong></p>
+        <label>
+          用户名
+          <input id="loginName" type="text" autocomplete="username" placeholder="你的名字">
+        </label>
+        <label>
+          访问码
+          <input id="loginCode" type="password" inputmode="numeric" autocomplete="current-password" placeholder="1234" required>
+        </label>
+        <p class="message" id="loginMessage"></p>
+        <button class="upload-button login-submit" type="submit">进入图库</button>
+      </form>
+    </section>
+
+    <section class="app-shell hidden" id="appShell">
     <header class="topbar">
       <a class="brand" href="#" aria-label="PixVault 首页">
         <span class="brand-mark"></span>
@@ -19,6 +47,7 @@
       </nav>
       <div class="top-actions">
         <button class="ghost-button" id="themeToggle" type="button" aria-label="切换主题">◐</button>
+        <button class="ghost-button" id="logoutButton" type="button">退出</button>
         <button class="upload-button" id="openUpload" type="button">上传</button>
       </div>
     </header>
@@ -56,6 +85,36 @@
         <button class="chip" data-category="other">其他</button>
       </section>
 
+      <section class="weather-panel" aria-label="当地天气">
+        <div class="weather-glass">
+          <div class="weather-orb" id="weatherOrb" aria-hidden="true"></div>
+          <div class="weather-main">
+            <span class="eyebrow">当地天气</span>
+            <h2 id="weatherTemp">读取中</h2>
+            <p id="weatherSummary">正在获取当前位置天气。</p>
+          </div>
+          <div class="weather-grid">
+            <div>
+              <span>位置</span>
+              <strong id="weatherPlace">当前位置</strong>
+            </div>
+            <div>
+              <span>体感</span>
+              <strong id="weatherFeels">--</strong>
+            </div>
+            <div>
+              <span>湿度</span>
+              <strong id="weatherHumidity">--</strong>
+            </div>
+            <div>
+              <span>风速</span>
+              <strong id="weatherWind">--</strong>
+            </div>
+          </div>
+          <button class="ghost-button weather-refresh" id="refreshWeather" type="button">刷新天气</button>
+        </div>
+      </section>
+
       <section class="content-bar">
         <div>
           <h2 id="galleryTitle">精选照片</h2>
@@ -79,6 +138,7 @@
         <button class="upload-button" type="button" data-upload-shortcut>上传照片</button>
       </section>
     </main>
+    </section>
 
     <dialog class="modal" id="uploadDialog">
       <form method="dialog" class="modal-card" id="uploadForm">
