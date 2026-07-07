@@ -1,3 +1,8 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const SUPABASE_URL = 'https://dumlwfrdobccyqqzlplc.supabase.co'
+const SUPABASE_ANON_KEY = 'sb_publishable_CpMzoIefRbr82gs97jAv5Q_4ICTtXME'
+
 const DB_NAME = "pixvault-photo-library";
 const STORE_NAME = "photos";
 
