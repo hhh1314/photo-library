@@ -2,6 +2,9 @@ const config = window.PIXVAULT_SUPABASE || {};
 const missingConfig = !config.url || !config.anonKey || config.url.includes("PASTE_") || config.anonKey.includes("PASTE_");
 const supabaseClient = missingConfig ? null : window.supabase.createClient(config.url, config.anonKey);
 const bucketName = config.bucket || "photos";
+const ADMIN_USER = "123456";
+const ADMIN_PASSWORD = "123456";
+const LOGIN_SESSION_KEY = "pixvault-admin-session";
 
 const state = {
   captchaAnswer: "",
@@ -123,12 +126,11 @@ async function login(event) {
 
   try {
     checkCaptcha();
-    const client = requireClient();
-    const { error } = await client.auth.signInWithPassword({
-      email: el.username.value.trim(),
-      password: el.password.value
-    });
-    if (error) throw error;
+    requireClient();
+    if (el.username.value.trim() !== ADMIN_USER || el.password.value !== ADMIN_PASSWORD) {
+      throw new Error("管理员账号或密码不正确。");
+    }
+    sessionStorage.setItem(LOGIN_SESSION_KEY, "ok");
     await showApp();
   } catch (error) {
     el.loginMessage.textContent = error.message;
@@ -137,30 +139,11 @@ async function login(event) {
 
 async function signup() {
   el.loginMessage.textContent = "";
-
-  try {
-    checkCaptcha();
-    const client = requireClient();
-    const { data, error } = await client.auth.signUp({
-      email: el.username.value.trim(),
-      password: el.password.value
-    });
-    if (error) throw error;
-    if (data.session) {
-      await showApp();
-    } else {
-      el.loginMessage.textContent = "注册成功。请到邮箱里确认后再登录。";
-      refreshCaptcha();
-    }
-  } catch (error) {
-    el.loginMessage.textContent = error.message;
-  }
+  refreshCaptcha();
 }
 
 async function logout() {
-  if (supabaseClient) {
-    await supabaseClient.auth.signOut().catch(() => {});
-  }
+  sessionStorage.removeItem(LOGIN_SESSION_KEY);
   el.appShell.classList.add("hidden");
   el.loginScreen.classList.remove("hidden");
   refreshCaptcha();
@@ -183,16 +166,16 @@ async function loadPhotos() {
   if (error) throw error;
 
   const photos = await Promise.all((data || []).map(async photo => {
-    const signed = await client.storage
+    const publicUrl = client.storage
       .from(bucketName)
-      .createSignedUrl(photo.storage_path, 60 * 60);
+      .getPublicUrl(photo.storage_path);
 
     return {
       id: photo.id,
       title: photo.title,
       category: photo.category || "other",
       tags: photo.tags || [],
-      src: signed.data?.signedUrl || "",
+      src: publicUrl.data?.publicUrl || "",
       storagePath: photo.storage_path,
       createdAt: photo.created_at,
       favorite: Boolean(photo.favorite),
@@ -306,13 +289,8 @@ async function uploadPhoto(event) {
   el.uploadMessage.textContent = "正在上传...";
   try {
     const client = requireClient();
-    const { data: userData, error: userError } = await client.auth.getUser();
-    if (userError) throw userError;
-    const user = userData.user;
-    if (!user) throw new Error("请先登录。");
-
     const ext = extensionFor(file);
-    const path = `${user.id}/${crypto.randomUUID()}${ext}`;
+    const path = `uploads/${crypto.randomUUID()}${ext}`;
     const upload = await client.storage.from(bucketName).upload(path, file, {
       cacheControl: "3600",
       contentType: file.type,
@@ -327,7 +305,6 @@ async function uploadPhoto(event) {
       .slice(0, 12);
 
     const insert = await client.from("photos").insert({
-      owner_id: user.id,
       title: sanitizeText(el.titleInput.value, file.name.replace(/\.[^.]+$/, "")),
       category: el.categoryInput.value || "other",
       tags,
@@ -556,8 +533,7 @@ async function init() {
     return;
   }
 
-  const { data } = await supabaseClient.auth.getSession();
-  if (data.session) {
+  if (sessionStorage.getItem(LOGIN_SESSION_KEY) === "ok") {
     await showApp();
   }
 }
