@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>PixVault Photos</title>
+    <title>PixVault Supabase</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -15,189 +15,152 @@
       </div>
       <form class="login-card" id="loginForm">
         <span class="glass-shine" aria-hidden="true"></span>
-        <div class="brand login-brand">
+        <div class="brand">
           <span class="brand-mark"></span>
           <span>PixVault</span>
         </div>
         <h1>登录照片库</h1>
-        <p>输入访问码后进入图库。演示访问码：<strong>1234</strong></p>
+        <p>输入邮箱、密码和验证码后进入 Supabase 云端照片库。</p>
         <label>
-          用户名
-          <input id="loginName" type="text" autocomplete="username" placeholder="你的名字">
+          邮箱
+          <input id="username" name="username" type="email" autocomplete="username" required>
         </label>
         <label>
-          访问码
-          <input id="loginCode" type="password" inputmode="numeric" autocomplete="current-password" placeholder="1234" required>
+          密码
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
         </label>
+        <div class="captcha-row">
+          <label>
+            验证码
+            <input id="captcha" name="captcha" inputmode="numeric" required>
+          </label>
+          <button class="captcha-image" id="refreshCaptcha" type="button" title="刷新验证码">
+            <img id="captchaImage" alt="验证码">
+          </button>
+        </div>
         <p class="message" id="loginMessage"></p>
-        <button class="upload-button login-submit" type="submit">进入图库</button>
+        <div class="auth-actions">
+          <button class="primary-button" type="submit">登录</button>
+          <button class="ghost-button" id="signupButton" type="button">注册账号</button>
+        </div>
       </form>
     </section>
 
     <section class="app-shell hidden" id="appShell">
-    <header class="topbar">
-      <a class="brand" href="#" aria-label="PixVault 首页">
-        <span class="brand-mark"></span>
-        <span>PixVault</span>
-      </a>
-      <nav class="nav-links" aria-label="主导航">
-        <button class="nav-link active" data-view="all">照片</button>
-        <button class="nav-link" data-view="favorites">收藏</button>
-        <button class="nav-link" data-view="recent">最近上传</button>
-      </nav>
-      <div class="top-actions">
-        <button class="ghost-button" id="themeToggle" type="button" aria-label="切换主题">◐</button>
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <span>PixVault</span>
+        </div>
+        <nav class="nav-tabs">
+          <button class="tab active" data-filter="all">全部</button>
+          <button class="tab" data-filter="favorites">收藏</button>
+          <button class="tab" data-filter="recent">最近</button>
+        </nav>
         <button class="ghost-button" id="logoutButton" type="button">退出</button>
-        <button class="upload-button" id="openUpload" type="button">上传</button>
-      </div>
-    </header>
+      </header>
 
-    <main>
-      <section class="hero">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-          <h1>免费管理你的高清照片</h1>
-          <p>搜索、分类、收藏、预览和下载，像素材站一样整理个人图片。</p>
-          <form class="search-panel" id="searchForm">
-            <label class="search-box">
-              <span class="search-icon">⌕</span>
-              <input id="searchInput" type="search" placeholder="搜索照片、标签、作者" autocomplete="off">
-            </label>
-            <select id="typeFilter" aria-label="照片类型">
-              <option value="all">全部图片</option>
+      <main>
+        <section class="hero">
+          <div>
+            <h1>Supabase 云端照片库</h1>
+            <p>GitHub 负责静态网页，Supabase Storage 保存照片，Postgres 数据库保存标题、分类和标签。</p>
+          </div>
+          <form class="search-bar" id="searchForm">
+            <input id="searchInput" type="search" placeholder="搜索标题、分类、标签">
+            <select id="categoryFilter">
+              <option value="all">全部分类</option>
               <option value="nature">自然</option>
               <option value="city">城市</option>
               <option value="people">人物</option>
               <option value="science">科研</option>
               <option value="other">其他</option>
             </select>
-            <button type="submit">搜索</button>
           </form>
-        </div>
-      </section>
+        </section>
 
-      <section class="category-strip" aria-label="分类">
-        <button class="chip selected" data-category="all">全部</button>
-        <button class="chip" data-category="nature">自然</button>
-        <button class="chip" data-category="city">城市</button>
-        <button class="chip" data-category="people">人物</button>
-        <button class="chip" data-category="science">科研</button>
-        <button class="chip" data-category="other">其他</button>
-      </section>
-
-      <section class="weather-panel" aria-label="当地天气">
-        <div class="weather-glass">
-          <div class="weather-orb" id="weatherOrb" aria-hidden="true"></div>
-          <div class="weather-main">
-            <span class="eyebrow">当地天气</span>
-            <h2 id="weatherTemp">读取中</h2>
-            <p id="weatherSummary">正在获取当前位置天气。</p>
+        <section class="weather-panel" aria-label="当地天气">
+          <div class="weather-glass">
+            <div class="weather-orb" id="weatherOrb" aria-hidden="true"></div>
+            <div class="weather-main">
+              <span class="eyebrow">当地天气</span>
+              <h2 id="weatherTemp">读取中</h2>
+              <p id="weatherSummary">正在获取当前位置天气。</p>
+            </div>
+            <div class="weather-grid">
+              <div>
+                <span>位置</span>
+                <strong id="weatherPlace">当前位置</strong>
+              </div>
+              <div>
+                <span>体感</span>
+                <strong id="weatherFeels">--</strong>
+              </div>
+              <div>
+                <span>湿度</span>
+                <strong id="weatherHumidity">--</strong>
+              </div>
+              <div>
+                <span>风速</span>
+                <strong id="weatherWind">--</strong>
+              </div>
+            </div>
+            <button class="ghost-button weather-refresh" id="refreshWeather" type="button">刷新天气</button>
           </div>
-          <div class="weather-grid">
-            <div>
-              <span>位置</span>
-              <strong id="weatherPlace">当前位置</strong>
-            </div>
-            <div>
-              <span>体感</span>
-              <strong id="weatherFeels">--</strong>
-            </div>
-            <div>
-              <span>湿度</span>
-              <strong id="weatherHumidity">--</strong>
-            </div>
-            <div>
-              <span>风速</span>
-              <strong id="weatherWind">--</strong>
-            </div>
-          </div>
-          <button class="ghost-button weather-refresh" id="refreshWeather" type="button">刷新天气</button>
-        </div>
-      </section>
+        </section>
 
-      <section class="content-bar">
-        <div>
-          <h2 id="galleryTitle">精选照片</h2>
-          <p id="galleryMeta">本地照片库，数据只保存在这台电脑的浏览器里。</p>
-        </div>
-        <div class="sort-group">
-          <label for="sortSelect">排序</label>
+        <section class="upload-panel">
+          <form id="uploadForm">
+            <input id="fileInput" name="photo" type="file" accept="image/*" required>
+            <input id="titleInput" name="title" type="text" placeholder="照片标题">
+            <select id="categoryInput" name="category">
+              <option value="nature">自然</option>
+              <option value="city">城市</option>
+              <option value="people">人物</option>
+              <option value="science">科研</option>
+              <option value="other" selected>其他</option>
+            </select>
+            <input id="tagsInput" name="tags" type="text" placeholder="标签：旅行, 蓝色, 实验">
+            <button class="primary-button" type="submit">上传</button>
+          </form>
+          <span id="uploadMessage"></span>
+        </section>
+
+        <section class="content-head">
+          <div>
+            <h2 id="galleryTitle">全部照片</h2>
+            <p id="galleryMeta">正在读取 Supabase 照片。</p>
+          </div>
           <select id="sortSelect">
             <option value="newest">最新</option>
-            <option value="liked">收藏优先</option>
+            <option value="favorite">收藏优先</option>
             <option value="title">标题</option>
           </select>
-        </div>
-      </section>
+        </section>
 
-      <section class="gallery" id="gallery" aria-live="polite"></section>
-
-      <section class="empty-state hidden" id="emptyState">
-        <h2>还没有匹配的照片</h2>
-        <p>换个关键词，或者上传几张你自己的图片。</p>
-        <button class="upload-button" type="button" data-upload-shortcut>上传照片</button>
-      </section>
-    </main>
+        <section class="gallery" id="gallery"></section>
+        <section class="empty hidden" id="emptyState">没有匹配的照片。</section>
+      </main>
     </section>
 
-    <dialog class="modal" id="uploadDialog">
-      <form method="dialog" class="modal-card" id="uploadForm">
-        <div class="modal-header">
-          <h2>上传照片</h2>
-          <button class="icon-button" value="cancel" aria-label="关闭">×</button>
-        </div>
-        <label class="drop-zone" id="dropZone">
-          <input id="fileInput" type="file" accept="image/*" multiple>
-          <span>选择图片或拖放到这里</span>
-          <small>支持 JPG、PNG、WebP、GIF；会保存到浏览器本地。</small>
-        </label>
-        <div class="field-grid">
-          <label>
-            标题
-            <input id="photoTitle" type="text" placeholder="例如：实验室窗口">
-          </label>
-          <label>
-            分类
-            <select id="photoCategory">
-              <option value="nature">自然</option>
-              <option value="city">城市</option>
-              <option value="people">人物</option>
-              <option value="science">科研</option>
-              <option value="other">其他</option>
-            </select>
-          </label>
-        </div>
-        <label>
-          标签
-          <input id="photoTags" type="text" placeholder="用逗号分隔，例如：蓝色, 光学, 旅行">
-        </label>
-        <menu class="modal-actions">
-          <button type="button" class="ghost-button" id="clearForm">清空</button>
-          <button type="submit" class="upload-button">保存到图库</button>
-        </menu>
-      </form>
-    </dialog>
-
-    <dialog class="lightbox" id="lightbox">
-      <article class="lightbox-card">
-        <button class="icon-button close-lightbox" id="closeLightbox" type="button" aria-label="关闭">×</button>
-        <img id="lightboxImage" alt="">
-        <aside class="lightbox-info">
-          <h2 id="lightboxTitle"></h2>
-          <p id="lightboxTags"></p>
-          <div class="detail-grid">
-            <span>分类</span><strong id="lightboxCategory"></strong>
-            <span>上传时间</span><strong id="lightboxDate"></strong>
-            <span>尺寸</span><strong id="lightboxSize"></strong>
-          </div>
-          <div class="detail-actions">
-            <button class="ghost-button" id="toggleFavorite" type="button">收藏</button>
-            <a class="upload-button" id="downloadPhoto" download>下载</a>
+    <dialog class="viewer" id="viewer">
+      <article>
+        <button id="closeViewer" class="icon-button" type="button">×</button>
+        <img id="viewerImage" alt="">
+        <aside>
+          <h2 id="viewerTitle"></h2>
+          <p id="viewerTags"></p>
+          <p id="viewerDate"></p>
+          <div class="viewer-actions">
+            <button class="ghost-button" id="favoriteButton" type="button">收藏</button>
+            <a class="primary-button" id="downloadButton" download>下载</a>
           </div>
         </aside>
       </article>
     </dialog>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
